@@ -3,27 +3,17 @@
 #include <ArduinoJson.h>
 #include <HardwareSerial.h>
 #include "secrets.h"
-// WiFi Credentials
-const char* ssid = "Nut_IoT";
-const char* password = "IoT09200128";
 
-// Telegram Bot Token และ Chat ID
-String BOT_TOKEN = "7570642665:AAHyN3ETHSK3F3-fTRb6RfiTfZdpAbWOF2s"; // ใส่ token จริง
-String CHAT_ID = "8192731413"; // ใส่ chat_id ของคุณ
+HardwareSerial pmsSerial(2);
 
-// ค่าฝุ่น
 int pm25 = 0;
 int pm10 = 0;
 
-// ไม่ให้ประมวลผล message ซ้ำ
 int last_message_id = -1;
-
-// Serial สำหรับ PMS5003
-HardwareSerial pmsSerial(2);
 
 void setup() {
   Serial.begin(115200);
-  pmsSerial.begin(9600, SERIAL_8N1, 16, 17); // RX=16, TX=17
+  pmsSerial.begin(9600, SERIAL_8N1, 16, 17); 
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -37,7 +27,7 @@ void setup() {
 }
 
 void loop() {
-  // อ่านค่าฝุ่นจาก PMS5003
+  
   if (pmsSerial.available()) {
     uint8_t data[32];
     size_t bytesRead = pmsSerial.readBytes(data, 32);
@@ -58,7 +48,6 @@ void loop() {
     }
   }
 
-  // เช็คคำสั่งจาก Telegram
   checkTelegramCommands();
 
   delay(2000);
@@ -85,7 +74,6 @@ void checkTelegramCommands() {
         String chat_id = String(message["chat"]["id"]);
         String text = message["text"];
         Serial.println("Received command: " + text);
-
         handleCommand(chat_id, text);
       }
     } else {
@@ -104,9 +92,9 @@ void handleCommand(String chat_id, String command) {
   command.toLowerCase();
 
   if (command == "/start" || command == "start") {
-    sendTelegramMessage(chat_id, "ยินดีต้อนรับ! ใช้คำสั่งต่อไปนี้:\n/now หรือ /pm เพื่อดูค่าฝุ่น");
+    sendTelegramMessage(chat_id, "ยินดีต้อนรับ! ใช้ /now หรือ /pm เพื่อดูค่าฝุ่นปัจจุบัน");
   } else if (command == "/now" || command == "/pm" || command == "now" || command == "pm") {
-    sendTelegramMessage(chat_id, "🌫️ PM2.5: " + String(pm25) + " µg/m³\n🌫️ PM10: " + String(pm10) + " µg/m³");
+    sendTelegramMessage(chat_id, "PM2.5: " + String(pm25) + " µg/m³\nPM10: " + String(pm10) + " µg/m³");
   } else {
     sendTelegramMessage(chat_id, "ไม่รู้จักคำสั่ง \"" + command + "\"\nพิมพ์ /start เพื่อดูคำสั่งที่ใช้ได้");
   }
@@ -133,7 +121,6 @@ void testSendMessage() {
   sendTelegramMessage(CHAT_ID, "ทดสอบการเชื่อมต่อสำเร็จ");
 }
 
-// ฟังก์ชันเข้ารหัส URL
 String urlencode(String str) {
   String encoded = "";
   char c;
